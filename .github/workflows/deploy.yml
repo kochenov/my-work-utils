@@ -16,7 +16,7 @@ jobs:
       - name: Установка Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: "14"
 
       - name: Установка зависимостей
         run: npm install
@@ -27,5 +27,5 @@ jobs:
       - name: Deploy в GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./dist/spa
