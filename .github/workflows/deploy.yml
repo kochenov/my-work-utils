@@ -22,7 +22,7 @@ jobs:
         run: npm install
 
       - name: Создание Quasar проекта
-        run: quasar build
+        run: npm run build
 
       - name: Deploy в GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
