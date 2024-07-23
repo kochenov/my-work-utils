@@ -48,6 +48,7 @@
           :event-color="eventColorFn"
           :locale="locale"
           @click="handleDateClick"
+          first-day-of-week="1"
         />
 
         <!-- Диалоговое окно для отображения информации о дате -->
