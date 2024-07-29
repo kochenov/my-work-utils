@@ -36,7 +36,7 @@
           <hr class="q-ma-sm"  style="width: 40px;"/>
           <h6>Прогнозируемый доход</h6>
           <p>Минимальный:  {{ totalWorkingDays * 3000 }} руб.</p>
-          <p>Максимальный:  {{ totalWorkingDays * 4000 }} руб.</p>
+          <p>Максимальный:  {{ totalWorkingDays * 3500 }} руб.</p>
         </div>
       </div>
 
