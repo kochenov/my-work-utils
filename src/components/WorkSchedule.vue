@@ -35,8 +35,8 @@
           <p>Количество выходных: {{ totalRestDays }}</p>
           <hr class="q-ma-sm"  style="width: 40px;"/>
           <h6>Прогнозируемый доход</h6>
-          <p>Минимальный:  {{ totalWorkingDays * 3000 }} руб.</p>
-          <p>Максимальный:  {{ totalWorkingDays * 3500 }} руб.</p>
+          <p>Минимальный:  {{ totalWorkingDays * 4500 }} руб.</p>
+          <p>Максимальный:  {{ totalWorkingDays * 5000 }} руб.</p>
         </div>
       </div>
 
