@@ -24,6 +24,17 @@
             label="Дата начала вахты"
             type="date"
           />
+          <hr />
+          <q-input
+            v-model.number="minManyforDay"
+            label="Минимальная з/п за день"
+            type="number"
+          />
+          <q-input
+            v-model.number="maxManyforDay"
+            label="Максимальная з/п за день"
+            type="number"
+          />
           <q-btn label="Создать график" type="submit" color="primary" />
         </q-form>
       </div>
@@ -33,10 +44,10 @@
         <div class="q-ma-sm">
           <p>Количество рабочих дней: {{ totalWorkingDays }}</p>
           <p>Количество выходных: {{ totalRestDays }}</p>
-          <hr class="q-ma-sm"  style="width: 40px;"/>
+          <hr class="q-ma-sm" style="width: 40px" />
           <h6>Прогнозируемый доход</h6>
-          <p>Минимальный:  {{ totalWorkingDays * 3000 }} руб.</p>
-          <p>Максимальный:  {{ totalWorkingDays * 4500 }} руб.</p>
+          <p>Минимальный: {{ totalWorkingDays * minManyforDay }} руб.</p>
+          <p>Максимальный: {{ totalWorkingDays * maxManyforDay }} руб.</p>
         </div>
       </div>
 
@@ -126,6 +137,8 @@ const rotationPeriod = ref(15);
 const rotationStart = ref(getCurrentDate());
 const currentDate = ref(rotationStart.value);
 const events = ref([]);
+const minManyforDay = ref(4500);
+const maxManyforDay = ref(5000);
 
 // Новые состояния для количества рабочих дней и выходных
 const totalWorkingDays = ref(0);
