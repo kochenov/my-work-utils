@@ -46,6 +46,7 @@
           <p>Количество выходных: {{ totalRestDays }}</p>
           <hr class="q-ma-sm" style="width: 40px" />
           <h6>Прогнозируемый доход</h6>
+
           <p>Минимальный: {{ totalWorkingDays * minManyforDay }} руб.</p>
           <p>Максимальный: {{ totalWorkingDays * maxManyforDay }} руб.</p>
         </div>
@@ -59,6 +60,7 @@
           :event-color="eventColorFn"
           :locale="locale"
           @click="handleDateClick"
+          first-day-of-week="1"
         />
 
         <!-- Диалоговое окно для отображения информации о дате -->
