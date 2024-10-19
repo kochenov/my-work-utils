@@ -22,10 +22,10 @@ jobs:
         run: npm install
 
       - name: Создание Quasar проекта
-        run: npm run build
+        run: npm run build -m pwa
 
       - name: Deploy в GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GH_TOCKEN }}
-          publish_dir: ./dist/spa
+          publish_dir: ./dist/pwa
