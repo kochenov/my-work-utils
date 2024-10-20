@@ -1,89 +1,180 @@
 <template>
-  <div class="q-pt-md q-gutter-y-lg">
-    <div class="row q-gutter-y-md">
-      <!-- Форма для ввода данных пользователем -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <q-form class="q-gutter-md" @submit.prevent="generateSchedule">
-          <q-input
-            v-model.number="workingDays"
-            label="Количество рабочих дней"
-            type="number"
-          />
-          <q-input
-            v-model.number="restDays"
-            label="Количество выходных дней"
-            type="number"
-          />
-          <q-input
-            v-model.number="rotationPeriod"
-            label="Срок вахты (дни)"
-            type="number"
-          />
-          <q-input
-            v-model="rotationStart"
-            label="Дата начала вахты"
-            type="date"
-          />
-          <hr />
-          <q-input
-            v-model.number="minManyforDay"
-            label="Минимальная з/п за день"
-            type="number"
-          />
-          <q-input
-            v-model.number="maxManyforDay"
-            label="Максимальная з/п за день"
-            type="number"
-          />
-          <q-btn label="Создать график" type="submit" color="primary" />
-        </q-form>
-      </div>
+  <div class="row q-col-gutter-lg">
+    <!-- Форма для ввода данных пользователем -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <q-card class="my-card">
+        <q-card-section>
+          <div class="text-h6">Расчёт рабочего графика</div>
+          <div class="text-subtitle2">Вахтовый метод</div>
+        </q-card-section>
 
+        <q-separator inset />
+        <q-card-section>
+          <q-form class="q-gutter-md" @submit.prevent="generateSchedule">
+            <q-input
+              v-model.number="workingDays"
+              label="Количество рабочих дней"
+              type="number"
+            />
+            <q-input
+              v-model.number="restDays"
+              label="Количество выходных дней"
+              type="number"
+            />
+            <q-input
+              v-model.number="rotationPeriod"
+              label="Срок вахты (дни)"
+              type="number"
+            />
+            <q-input
+              v-model="rotationStart"
+              label="Дата начала вахты"
+              type="date"
+            />
+
+            <q-btn
+              color="black"
+              class="full-width"
+              @click="otherForm = !otherForm"
+              >Настройка заработка</q-btn
+            >
+
+            <div v-if="otherForm">
+              <q-input
+                v-model.number="minManyforDay"
+                label="Минимальная з/п за день"
+                type="number"
+              />
+              <q-input
+                v-model.number="maxManyforDay"
+                label="Максимальная з/п за день"
+                type="number"
+              />
+            </div>
+
+            <q-btn
+              class="full-width"
+              label="Создать график"
+              type="submit"
+              color="primary"
+            />
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </div>
+    <!-- Календарь для отображения графика -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <q-card class="my-card">
+        <q-card-section class="flex flex-center">
+          <q-date
+            title="Выберите дату"
+            v-model="currentDate"
+            :events="eventsFn"
+            :event-color="eventColorFn"
+            :locale="locale"
+            @click="handleDateClick"
+            first-day-of-week="1"
+            :minimal="true"
+            flat
+            square
+            today-btn
+            navigation-min-year-month="2024/10"
+          />
+        </q-card-section>
+      </q-card>
+    </div>
+    <!-- Диалоговое окно для отображения информации о дате -->
+    <q-dialog v-model="isDialogOpen">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">{{ dialogDate }}</div>
+          <div>{{ dialogMessage }}</div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Закрыть" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <div class="col-12 col-md-6 col-lg-4">
       <!-- Вывод количества рабочих дней и выходных -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="q-ma-sm">
-          <p>Количество рабочих дней: {{ totalWorkingDays }}</p>
-          <p>Количество выходных: {{ totalRestDays }}</p>
-          <hr class="q-ma-sm" style="width: 40px" />
-          <h6>Прогнозируемый доход</h6>
+      <q-card class="my-card">
+        <q-card-section>
+          <div class="text-h6">Дни вахты</div>
+        </q-card-section>
 
-          <p>Минимальный: {{ totalWorkingDays * minManyforDay }} руб.</p>
-          <p>Максимальный: {{ totalWorkingDays * maxManyforDay }} руб.</p>
-        </div>
-      </div>
+        <q-separator inset />
 
-      <!-- Календарь для отображения графика -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <q-date
-          v-model="currentDate"
-          :events="eventsFn"
-          :event-color="eventColorFn"
-          :locale="locale"
-          @click="handleDateClick"
-          first-day-of-week="1"
-        />
+        <q-card-section>
+          <div class="q-ma-sm">
+            <q-chip square>
+              <q-avatar color="blue" text-color="white">{{
+                totalWorkingDays
+              }}</q-avatar>
+              рабочих дней
+            </q-chip>
+            <q-chip square>
+              <q-avatar color="red" text-color="white">{{
+                totalRestDays
+              }}</q-avatar>
+              рабочих дней
+            </q-chip>
+          </div>
+        </q-card-section>
+      </q-card>
 
-        <!-- Диалоговое окно для отображения информации о дате -->
-        <q-dialog v-model="isDialogOpen">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">{{ dialogDate }}</div>
-              <div>{{ dialogMessage }}</div>
-            </q-card-section>
+      <q-card class="my-card">
+        <q-card-section>
+          <div class="text-h6">Прогнозируемый доход</div>
+        </q-card-section>
 
-            <q-card-actions align="right">
-              <q-btn flat label="Закрыть" color="primary" v-close-popup />
-            </q-card-actions>
-          </q-card>
-        </q-dialog>
-      </div>
+        <q-separator inset />
+
+        <q-card-section>
+          <div class="q-ma-sm">
+            <q-list bordered padding>
+              <q-item>
+                <q-item-section avatar>
+                  <q-icon color="primary" name="directions" />
+                </q-item-section>
+                <q-item-section>Минимальная з/п </q-item-section>
+                <q-item-section side>
+                  <q-item-label caption
+                    >{{
+                      totalWorkingDays * minManyforDay
+                    }}
+                    &#x20bd;</q-item-label
+                  >
+                </q-item-section>
+              </q-item>
+
+              <q-item>
+                <q-item-section avatar>
+                  <q-icon color="red" name="directions" />
+                </q-item-section>
+                <q-item-section>Максимальная з/п </q-item-section>
+                <q-item-section side>
+                  <q-item-label caption color="red"
+                    >{{
+                      totalWorkingDays * maxManyforDay
+                    }}
+                    &#x20bd;</q-item-label
+                  >
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import { LocalStorage } from "quasar";
 
+const otherForm = ref(false);
 // Определение локализации на русском языке
 const locale = {
   days: [
@@ -133,14 +224,14 @@ const getCurrentDate = () => {
 };
 
 // Состояние для хранения пользовательских данных
-const workingDays = ref(6);
-const restDays = ref(1);
-const rotationPeriod = ref(15);
-const rotationStart = ref(getCurrentDate());
-const currentDate = ref(rotationStart.value);
-const events = ref([]);
-const minManyforDay = ref(4500);
-const maxManyforDay = ref(5000);
+const workingDays = ref(6); // Количество рабочих дней
+const restDays = ref(1); // Количество выходных
+const rotationPeriod = ref(15); // Период смены рабочих дней
+const rotationStart = ref(getCurrentDate()); // Начальная дата смены рабочих дней(в формате YYYY-MM-DD)
+const currentDate = ref(rotationStart.value); // Текущая дата смены рабочих дней(в формате YYYY-MM-DD)
+const events = ref([]); // Массив событий
+const minManyforDay = ref(4500); // Минимальная дневная оплата в рублях
+const maxManyforDay = ref(5000); // Максимальная дневная оплата в рублях
 
 // Новые состояния для количества рабочих дней и выходных
 const totalWorkingDays = ref(0);
@@ -224,6 +315,12 @@ const generateSchedule = () => {
   });
 
   console.log(`Даты событий:` + events.value);
+  LocalStorage.set("events", events.value); // Сохранение событий в LocalStorage
+  LocalStorage.set("workingDays", workingDays.value);
+  LocalStorage.set("restDays", restDays.value);
+  LocalStorage.set("rotationPeriod", rotationPeriod.value);
+  LocalStorage.set("rotationStart", rotationStart.value);
+  LocalStorage.set("currentDate", currentDate.value);
 };
 
 // Функция для проверки наличия событий
@@ -252,11 +349,38 @@ const eventColorFn = (date) => {
   }
   return "";
 };
+
+onMounted(() => {
+  let workingDaysLocal = LocalStorage.getItem("workingDays");
+  let restDaysLocal = LocalStorage.getItem("restDays");
+  let rotationPeriodLocal = LocalStorage.getItem("rotationPeriod");
+  let rotationStartLocal = LocalStorage.getItem("rotationStart");
+  let currentDateLocal = LocalStorage.getItem("currentDate");
+
+  if (workingDaysLocal) {
+    workingDays.value = workingDaysLocal;
+  }
+  if (restDaysLocal) {
+    restDays.value = restDaysLocal;
+  }
+  if (rotationPeriodLocal) {
+    rotationPeriod.value = rotationPeriodLocal;
+  }
+  if (rotationStartLocal) {
+    rotationStart.value = rotationStartLocal;
+  }
+  if (currentDateLocal) {
+    currentDate.value = currentDateLocal;
+    generateSchedule(); // Генерация рабочего графика
+  }
+});
 </script>
 
 <style scoped>
-.q-form {
-  max-width: 300px;
-  margin-bottom: 20px;
+.my-card {
+  /*max-width: 300px; */
+  padding: 10px;
+  margin-bottom: 15px;
+  /*margin-bottom: 20px;*/
 }
 </style>
