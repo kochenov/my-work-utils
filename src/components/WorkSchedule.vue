@@ -2,7 +2,7 @@
   <div class="row q-col-gutter-lg">
     <!-- Форма для ввода данных пользователем -->
     <div class="col-12 col-md-6 col-lg-4">
-      <q-card class="my-card">
+      <q-card v-if="events.length == 0" class="my-card">
         <q-card-section>
           <div class="text-h6">Расчёт рабочего графика</div>
           <div class="text-subtitle2">Вахтовый метод</div>
@@ -61,6 +61,44 @@
           </q-form>
         </q-card-section>
       </q-card>
+
+      <q-table
+        flat
+        bordered
+        title="Доходы"
+        :rows="events"
+        :columns="columns"
+        row-key="id"
+      >
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td key="id" :props="props">
+              {{ props.row.id + 1 }}
+            </q-td>
+            <q-td key="date" :props="props">
+              {{ props.row.date }}
+            </q-td>
+            <q-td key="money" :props="props">
+              <q-badge color="green">
+                {{ props.row.money }}
+              </q-badge>
+              <q-btn
+                flat
+                @click="funcDialogPromtOpen(props.row.id)"
+                size="sm"
+                dense
+                icon="add"
+                style="color: #f43455"
+              />
+            </q-td>
+            <q-td key="type" :props="props">
+              <q-badge :color="props.row.type == 'work' ? 'green' : 'red'">
+                {{ props.row.type }}
+              </q-badge>
+            </q-td>
+          </q-tr>
+        </template>
+      </q-table>
     </div>
     <!-- Календарь для отображения графика -->
     <div class="col-12 col-md-6 col-lg-4">
@@ -80,6 +118,16 @@
             today-btn
             navigation-min-year-month="2024/10"
           />
+          <q-btn
+            v-if="events.length == 0"
+            color="secondary"
+            class="full-width"
+            @click="saveEvents()"
+            >Запомнить график</q-btn
+          >
+          <q-btn v-else color="red" class="full-width" @click="events = []"
+            >Изменить график</q-btn
+          >
         </q-card-section>
       </q-card>
     </div>
@@ -117,7 +165,7 @@
               <q-avatar color="red" text-color="white">{{
                 totalRestDays
               }}</q-avatar>
-              рабочих дней
+              выходных дней
             </q-chip>
           </div>
         </q-card-section>
@@ -135,7 +183,7 @@
             <q-list bordered padding>
               <q-item>
                 <q-item-section avatar>
-                  <q-icon color="primary" name="directions" />
+                  <q-icon color="primary" name="payments" />
                 </q-item-section>
                 <q-item-section>Минимальная з/п </q-item-section>
                 <q-item-section side>
@@ -150,11 +198,25 @@
 
               <q-item>
                 <q-item-section avatar>
-                  <q-icon color="red" name="directions" />
+                  <q-icon color="red" name="credit_card" />
                 </q-item-section>
                 <q-item-section>Максимальная з/п </q-item-section>
                 <q-item-section side>
-                  <q-item-label caption color="red"
+                  <q-item-label caption class="text-red"
+                    >{{
+                      totalWorkingDays * maxManyforDay
+                    }}
+                    &#x20bd;</q-item-label
+                  >
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                  <q-icon color="yellow" name="account_balance" />
+                </q-item-section>
+                <q-item-section>Средняя з/п в день</q-item-section>
+                <q-item-section side>
+                  <q-item-label caption class="text-green"
                     >{{
                       totalWorkingDays * maxManyforDay
                     }}
@@ -167,12 +229,97 @@
         </q-card-section>
       </q-card>
     </div>
+    <div class="row">
+      <div v-if="events" class="col-lg-12 col-md-6"></div>
+    </div>
   </div>
+  <q-dialog v-model="prompt" persistent>
+    <q-card style="min-width: 350px">
+      <q-card-section>
+        <div class="text-h6">Зарплата за день</div>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <q-input
+          dense
+          type="number"
+          v-model="pricePromt"
+          autofocus
+          @keyup.enter="prompt = false"
+        />
+      </q-card-section>
+
+      <q-card-actions align="right" class="text-primary">
+        <q-btn flat label="Cancel" v-close-popup />
+        <q-btn flat label="Сохранить" @click="onRowClick()" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
 import { onMounted, ref } from "vue";
 import { LocalStorage } from "quasar";
+import { useEventStore } from "../../src/stores/event-store";
+
+const { eventStore } = useEventStore();
+
+const formEvents = ref(true);
+
+const prompt = ref(false); // Показывает ли форму диалога
+const tempID = ref(null);
+const pricePromt = ref(0);
+
+/**
+ * Открытие диалога для добавления з/п
+ * @param id - id события
+ */
+const funcDialogPromtOpen = (id) => {
+  pricePromt.value = null; // обнуляем значение з/п
+  tempID.value = id; // Записываем в переменную id
+  prompt.value = true; // Показываем форму диалога
+  console.log("Диалог добавления з/п открыт");
+}; // Функция для диалога
+
+/**
+ *  Добавление в событие новое значение з/п при нажатии на кнопку
+ */
+const onRowClick = () => {
+  let eventsLoc = getEvents();
+  // поиск индекса события по id
+  let foundIndex = eventsLoc.findIndex((x) => x.id == tempID.value);
+  // если найдено, то добавляем з/п в событие и сохраняем в LocalStorage
+  eventsLoc[foundIndex].money = pricePromt.value; // Записываем в переменную id
+  saveEvents(eventsLoc);
+  events.value = getEvents();
+  tempID.value = null;
+  prompt.value = false;
+};
+
+const columns = [
+  {
+    name: "id",
+    label: "#",
+    field: "id",
+  },
+  {
+    name: "date",
+    required: true,
+    label: "Дата",
+    align: "left",
+    field: (row) => row.date,
+    format: (val) => `${val}`,
+    sortable: true,
+  },
+  {
+    name: "money",
+    align: "center",
+    label: "Затрата (руб)",
+    field: "money",
+    sortable: true,
+  },
+  { name: "type", label: "Статус", field: "type", sortable: true },
+];
 
 const otherForm = ref(false);
 // Определение локализации на русском языке
@@ -270,7 +417,7 @@ const handleDateClick = () => {
 
 // Функция для генерации рабочего графика
 const generateSchedule = () => {
-  events.value = [];
+  let events = [];
 
   let startDate = new Date(rotationStart.value);
   startDate.setHours(0, 0, 0, 0);
@@ -285,7 +432,7 @@ const generateSchedule = () => {
       i < workingDays.value && totalDays < rotationPeriod.value;
       i++
     ) {
-      events.value.push({
+      events.push({
         date: startDate.toISOString().split("T")[0],
         type: "work",
       });
@@ -299,7 +446,7 @@ const generateSchedule = () => {
       j < restDays.value && totalDays < rotationPeriod.value;
       j++
     ) {
-      events.value.push({
+      events.push({
         date: startDate.toISOString().split("T")[0],
         type: "rest",
       });
@@ -309,23 +456,26 @@ const generateSchedule = () => {
     }
   }
 
-  events.value.push({
+  events.push({
     date: startDate.toISOString().split("T")[0],
     type: "end",
   });
 
-  console.log(`Даты событий:` + events.value);
-  LocalStorage.set("events", events.value); // Сохранение событий в LocalStorage
-  LocalStorage.set("workingDays", workingDays.value);
-  LocalStorage.set("restDays", restDays.value);
-  LocalStorage.set("rotationPeriod", rotationPeriod.value);
-  LocalStorage.set("rotationStart", rotationStart.value);
-  LocalStorage.set("currentDate", currentDate.value);
+  events.forEach((val, index) => {
+    events[index] = {
+      ...val,
+      id: index,
+      money: val.money != null && val.money > 0 ? val.money : 0,
+    };
+  });
+  saveEvents(events);
+  events.value = getEvents();
+  formEvents.value = false;
 };
 
 // Функция для проверки наличия событий
 const eventsFn = (date) => {
-  if (date) {
+  if (date && events.value) {
     const formattedDate = new Date(date).toISOString().split("T")[0];
     return events.value.some((event) => event.date === formattedDate);
   }
@@ -351,11 +501,32 @@ const eventColorFn = (date) => {
 };
 
 onMounted(() => {
+  events.value = getEvents();
+});
+
+const saveEvents = (events) => {
+  console.log(events);
+
+  console.log("Первый день: " + events[0].date);
+  console.log("Последний день: " + events[events.length - 1].date);
+
+  events.value = events;
+
+  LocalStorage.set("events", events); // Сохранение событий в LocalStorage
+  LocalStorage.set("workingDays", workingDays.value);
+  LocalStorage.set("restDays", restDays.value);
+  LocalStorage.set("rotationPeriod", rotationPeriod.value);
+  LocalStorage.set("rotationStart", rotationStart.value);
+  LocalStorage.set("currentDate", currentDate.value);
+};
+
+const getEvents = () => {
   let workingDaysLocal = LocalStorage.getItem("workingDays");
   let restDaysLocal = LocalStorage.getItem("restDays");
   let rotationPeriodLocal = LocalStorage.getItem("rotationPeriod");
   let rotationStartLocal = LocalStorage.getItem("rotationStart");
   let currentDateLocal = LocalStorage.getItem("currentDate");
+  let events = LocalStorage.getItem("events"); // События
 
   if (workingDaysLocal) {
     workingDays.value = workingDaysLocal;
@@ -371,9 +542,10 @@ onMounted(() => {
   }
   if (currentDateLocal) {
     currentDate.value = currentDateLocal;
-    generateSchedule(); // Генерация рабочего графика
+    //generateSchedule(); // Генерация рабочего графика
   }
-});
+  return events; // Возвращение событий
+};
 </script>
 
 <style scoped>
